@@ -1,0 +1,37 @@
+/* v26 · AI 상무관 실시간 파견 (브리프 연동 + 사전조사 + AI 종합) */
+#v26Stage{margin:14px 0 16px;border:1px solid #e4dcf3;border-radius:18px;background:linear-gradient(135deg,#fbf8ff,#f4fbf9);padding:16px 18px}
+#v26Stage[hidden]{display:none!important}
+.v26-stage-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.v26-stage-head b{font-size:14px;color:#3d2e6b;letter-spacing:-.3px}
+.v26-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.v26-step{position:relative;border:1px solid #e6e0f2;background:#fff;border-radius:13px;padding:10px 11px;min-height:74px;transition:all .25s}
+.v26-step .v26-ico{font-size:19px}
+.v26-step strong{display:block;font-size:12.5px;color:#3a3160;margin:3px 0 2px}
+.v26-step small{display:block;font-size:10.5px;line-height:1.45;color:#7a7091;overflow-wrap:anywhere}
+.v26-step.active{border-color:#a07ad8;box-shadow:0 0 0 3px rgba(135,85,205,.13)}
+.v26-step.active .v26-ico{animation:v26pulse 1s ease-in-out infinite}
+.v26-step.done{border-color:#bfe8dc;background:#f3fcf8}
+.v26-step.done strong::after{content:" ✓";color:#14917b}
+.v26-step.fail{border-color:#f1c9a7;background:#fff8f0}
+@keyframes v26pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
+.v26-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:850;border-radius:999px;padding:5px 10px;border:1px solid}
+.v26-badge.ai{color:#5b3fb0;background:#f1ebff;border-color:#d9cbf7}
+.v26-badge.rule{color:#0d7a68;background:#e6f8f2;border-color:#c3ecdf}
+.v26-badge.v25{color:#8a5a1c;background:#fff4e2;border-color:#f5ddb3}
+.v26-badge.run{color:#5d6680;background:#f2f4f9;border-color:#dfe3ee}
+.v26-status{display:inline-block;font-size:11px;font-weight:850;border-radius:999px;padding:5px 10px}
+.v26-status.s-정상{background:#e3f7ef;color:#0b7a5f}.v26-status.s-주의{background:#fff1dc;color:#a8651b}.v26-status.s-위험{background:#ffe6ea;color:#b4304a}
+.v26-modebar{display:flex;flex-wrap:wrap;gap:7px;margin:6px 0 8px}
+.v26-report .v26-lines{margin:0;padding-left:20px}
+.v26-report .v26-lines li{margin:3px 0;font-weight:700}
+.v26-ref{display:inline-block;font-size:10px;font-weight:850;color:#6a4cc0;background:#f1ebff;border-radius:6px;padding:0 5px;margin-left:3px;text-decoration:none}
+.v26-brief-item{border:1px solid #ebe6f4;border-radius:11px;padding:9px 11px;margin:6px 0;background:#fff}
+.v26-brief-item small{color:#7a7091}
+.v26-brief-item a{font-size:11px;margin-right:8px}
+.v26-src{font-size:11px;line-height:1.6;overflow-wrap:anywhere;color:#5e5873}
+.v26-conf{font-size:10px;font-weight:850;border-radius:6px;padding:1px 6px;margin-right:4px}
+.v26-conf.ok{background:#e3f7ef;color:#0b7a5f}.v26-conf.chk{background:#fff1dc;color:#a8651b}
+.v26-letter{white-space:pre-wrap;background:#faf9fd;border:1px solid #e6e0f2;border-radius:12px;padding:12px;font-size:12px;line-height:1.7;font-family:inherit}
+.v26-placeholder{padding:30px 10px;text-align:center;color:#6f6889;font-size:13px}
+.v26-why{font-size:11px;color:#8a7f9c;margin-top:8px}
+@media(max-width:700px){.v26-steps{grid-template-columns:1fr 1fr}.v26-step{min-height:66px}#v26Stage{padding:13px}}

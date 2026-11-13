@@ -1,0 +1,32 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["country_code","country","mission","title","checked_date","summary","key_facts","agencies","indicators","korea_links","opportunities","risks","status_hint","questions","match_keywords","uncertain"],
+  "properties": {
+    "country_code": {"type": "string"},
+    "country": {"type": "string"},
+    "mission": {"type": "string", "enum": ["supply","entry","partner"]},
+    "title": {"type": "string"},
+    "checked_date": {"type": "string"},
+    "summary": {"type": "string"},
+    "key_facts": {"type": "array", "items": {"type": "object", "additionalProperties": false,
+      "required": ["fact","source_title","source_url","published_or_updated","confidence"],
+      "properties": {"fact": {"type":"string"}, "source_title": {"type":"string"}, "source_url": {"type":"string"}, "published_or_updated": {"type":"string"}, "confidence": {"type":"string","enum":["확인","확인 필요"]}}}},
+    "agencies": {"type": "array", "items": {"type": "object", "additionalProperties": false,
+      "required": ["name","role","url"],
+      "properties": {"name": {"type":"string"}, "role": {"type":"string"}, "url": {"type":"string"}}}},
+    "indicators": {"type": "array", "items": {"type": "object", "additionalProperties": false,
+      "required": ["name","value","as_of","source_url"],
+      "properties": {"name": {"type":"string"}, "value": {"type":"string"}, "as_of": {"type":"string"}, "source_url": {"type":"string"}}}},
+    "korea_links": {"type": "array", "items": {"type": "object", "additionalProperties": false,
+      "required": ["text","source_url"],
+      "properties": {"text": {"type":"string"}, "source_url": {"type":"string"}}}},
+    "opportunities": {"type": "array", "items": {"type": "string"}},
+    "risks": {"type": "array", "items": {"type": "string"}},
+    "status_hint": {"type": "object", "additionalProperties": false, "required": ["status","reason"],
+      "properties": {"status": {"type":"string","enum":["정상","주의","위험"]}, "reason": {"type":"string"}}},
+    "questions": {"type": "array", "items": {"type": "string"}},
+    "match_keywords": {"type": "array", "items": {"type": "string"}},
+    "uncertain": {"type": "array", "items": {"type": "string"}}
+  }
+}

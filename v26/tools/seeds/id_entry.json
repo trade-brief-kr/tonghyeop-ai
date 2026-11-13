@@ -1,0 +1,75 @@
+{
+ "country_code": "id",
+ "country": "인도네시아",
+ "mission": "entry",
+ "case": {
+  "title": "인도네시아 배터리 소재기업 투자·허가 경로 점검",
+  "sector": "battery",
+  "request": "[가상] 한국 배터리 소재기업이 인도네시아 소재가공 프로젝트에 지분참여를 검토하며 OSS·업종 분류와 허가 요건 문의.",
+  "decision": "투자구조·업종코드(KBLI)·환경·광물가공 관련 허가를 분리한 종합 체크리스트 작성.",
+  "situation": "[가상 상황] 국내 소재기업이 합작투자 후보 사업장을 검토하고 있으나 지분·사업구조·인허가 승계 여부 미정.",
+  "facts": [
+   [
+    "인도네시아는 OSS를 통한 위험기반 사업허가를 운영하며, 관련 2025년 투자·다운스트리밍 부령이 절차를 규정한다.",
+    "ID_OSS"
+   ],
+   [
+    "인도네시아 통계청은 KBLI 2025 적용이 기존 기업에 일률적인 신규 허가 취득을 요구하는 것은 아니라고 안내했다.",
+    "ID_KBLI"
+   ]
+  ],
+  "issues": [
+   "합작·기존 법인 인수와 신설법인의 허가승계 요건 비교",
+   "KBLI 업종분류·위험등급과 OSS 신청항목 검토",
+   "환경·산업·광물 관련 허가 및 국내기업 실사 책임 구분"
+  ],
+  "contacts": [
+   [
+    "투자·다운스트리밍/BKPM",
+    "OSS·투자허가 절차 확인",
+    "ID_OSS"
+   ],
+   [
+    "에너지광물자원부(ESDM)",
+    "광물 가공 관련 정책·절차 확인",
+    "ID_ESDM"
+   ]
+  ],
+  "offers": [
+   "기업 구조별 필요한 허가·환경 심사 매트릭스 작성",
+   "현지 투자기관과 합작투자 기업 간 사전 인허가 설명회 검토"
+  ],
+  "questions": [
+   "합작·기존시설 인수·신설 중 방식별 OSS 신청 차이는?",
+   "대상 프로젝트의 KBLI 코드와 위험등급은 무엇인가?",
+   "기존 허가를 지분인수 후 승계할 수 있는가?",
+   "환경·산업·광물 분야 별도 승인의 주관기관은?",
+   "기존 사업 실사에 필요한 공개 인허가 자료는 어디에서 확인 가능한가?"
+  ],
+  "risks": [
+   "프로젝트 KBLI 코드 오분류",
+   "환경·광물 분야 승인 미확인",
+   "기존 사업 인허가 승계와 책임소재 문제"
+  ],
+  "actions": [
+   "기업 사업구조·투자비율 확정",
+   "OSS·KBLI·환경·광물 허가 매트릭스 작성",
+   "현지 기관의 서면확인 후 법률·환경 실사 추진"
+  ],
+  "gate": "투자대상 사업의 업종코드·필수 인허가·기존 법인 책임관계 확인 후 투자 판단."
+ },
+ "sources": {
+  "ID_ESDM": {
+   "name": "인도네시아 ESDM: 니켈 RKAB 발표",
+   "url": "https://esdm.go.id/en/media-center/news-archives/kementerian-esdm-belum-putuskan-besaran-rkab-nikel-2026"
+  },
+  "ID_OSS": {
+   "name": "인도네시아 OSS 투자 인허가 제도",
+   "url": "https://peraturan.bpk.go.id/Details/332573/permeninvesbkpm-no-5-tahun-2025"
+  },
+  "ID_KBLI": {
+   "name": "인도네시아 통계청: KBLI 2025 제도 안내",
+   "url": "https://www.bps.go.id/en/news/2026/04/30/908/pemerintah-memastikan-kbli-2025-tidak-memerlukan-perizinan-baru.html"
+  }
+ }
+}

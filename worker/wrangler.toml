@@ -1,0 +1,11 @@
+name = "tonghyeop-officer"
+main = "src/index.js"
+compatibility_date = "2026-11-01"
+
+[vars]
+AI_PROVIDER = "gemini"                 # openai 로 바꾸면 OPENAI_API_KEY Secret 사용
+AI_MODEL = "gemini-flash-lite-latest,gemini-flash-latest"   # 무료 등급 Flash. 앞 모델 실패(404/429/5xx/시간초과) 시 다음 모델
+ALLOWED_ORIGINS = "https://trade-brief-kr.github.io"     # 배포 도메인(경로 제외)
+ALLOW_FILE_ORIGIN = "false"
+RATE_PER_MIN = "10"                    # IP당 분당 요청(상무관+빨간펜 합산)
+# Secret 등록(값은 파일에 쓰지 않음): npx wrangler secret put GEMINI_API_KEY
