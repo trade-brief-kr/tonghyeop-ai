@@ -3,6 +3,8 @@
 import json, glob, os, re, datetime
 here = os.path.dirname(os.path.abspath(__file__))
 items, problems = {}, []
+uc_path = os.path.join(here, 'logs', 'url_check.json')
+UC = json.load(open(uc_path, encoding='utf-8')) if os.path.exists(uc_path) else {}   # check_urls.py 결과
 for f in sorted(glob.glob(os.path.join(here, 'out', '*.json'))):
     k = os.path.basename(f)[:-5]
     try:
@@ -12,10 +14,19 @@ for f in sorted(glob.glob(os.path.join(here, 'out', '*.json'))):
     for x in d.get('key_facts', []) + d.get('indicators', []) + d.get('korea_links', []):
         if not re.match(r'^https?://', x.get('source_url', '')):
             problems.append(f'{k}: 출처 URL 없음 -> {str(x)[:60]}')
+    for x in d.get('key_facts', []) + d.get('indicators', []) + d.get('korea_links', []) + d.get('agencies', []):
+        u = x.get('source_url') or x.get('url') or ''
+        c = UC.get(u, {}).get('class')
+        if c == 'dead':
+            x['link'] = 'dead'; problems.append(f'{k}: 죽은 링크 -> {u}')
+            if 'confidence' in x: x['confidence'] = '확인 필요'
+        elif c == 'blocked': x['link'] = 'blocked'
     seed = os.path.join(here, 'seeds', k + '.json')
     if os.path.exists(seed):
-        sc = json.load(open(seed, encoding='utf-8'))['case']
-        d['scenario'] = {kk: sc.get(kk) for kk in ('title', 'sector', 'request', 'decision', 'actions', 'questions', 'gate')}
+        sd = json.load(open(seed, encoding='utf-8'))
+        if 'case' in sd:
+            sc = sd['case']
+            d['scenario'] = {kk: sc.get(kk) for kk in ('title', 'sector', 'request', 'decision', 'actions', 'questions', 'gate')}
     items[k] = d
 urls = {x['source_url'] for d in items.values() for x in d.get('key_facts', []) + d.get('indicators', []) + d.get('korea_links', []) if x.get('source_url')}
 urls |= {a['url'] for d in items.values() for a in d.get('agencies', []) if a.get('url')}

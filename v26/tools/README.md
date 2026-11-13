@@ -2,9 +2,11 @@
 
 | 파일 | 역할 |
 |---|---|
-| seeds/*.json | v25 15개 시나리오(국가×임무)와 v25 출처. Codex 입력 |
+| seeds/*.json | 21개국×3임무=63건 시드. 15건은 v25 시나리오, 48건은 국가별 조사 초점(focus)·분야 목록. Codex 입력 |
 | mission_prompt.md, mission_schema.json | Codex 지시문과 출력 스키마 |
-| gen_missions.sh | `codex --search exec`로 15건 생성 → out/ → merge_missions.py |
+| gen_missions.sh | `codex --search exec`로 63건 생성(동시 6개 약 1시간) → out/ → merge_missions.py |
+| check_urls.py | 출처 URL 자동 점검 → logs/url_check.json (merge 시 dead/blocked 표시) |
+| live21.py | 21개국 라이브 점검(키르기스 반도체 요청·투르크메니스탄·폴란드, Gemini 약 4회) |
 | merge_missions.py | out/*.json을 ../data/missions.json으로 병합 (v25 시나리오 판단·조치 포함). 출처 URL 검증 |
 | build_v26.py | v25 원본에서 ../index.html 생성 (사전조사 내장본 갱신 포함) |
 | set_api.py | 배포본 index.html의 `TGG_OFFICER_API` 한 줄만 교체 (v25 원본 없이 레포에서 실행 가능) |

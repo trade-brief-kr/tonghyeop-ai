@@ -35,3 +35,13 @@
 .v26-placeholder{padding:30px 10px;text-align:center;color:#6f6889;font-size:13px}
 .v26-why{font-size:11px;color:#8a7f9c;margin-top:8px}
 @media(max-width:700px){.v26-steps{grid-template-columns:1fr 1fr}.v26-step{min-height:66px}#v26Stage{padding:13px}}
+/* 요청에 대한 직접 답변 */
+.v26-answer{border:1px solid #e0d4f7;border-left:5px solid #6a4cc0;background:#faf7ff;border-radius:10px;padding:12px 14px;margin:10px 0 14px}
+.v26-answer-head{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.v26-verdict{font-weight:700;font-size:.85em;padding:2px 10px;border-radius:999px;background:#6a4cc0;color:#fff}
+.v26-answer.v-조건부가능{border-left-color:#d68a00}.v26-answer.v-조건부가능 .v26-verdict{background:#d68a00}
+.v26-answer.v-어려움{border-left-color:#c0392b}.v26-answer.v-어려움 .v26-verdict{background:#c0392b}
+.v26-answer.v-판단보류{border-left-color:#7a7f87}.v26-answer.v-판단보류 .v26-verdict{background:#7a7f87}
+.v26-answer-q{font-size:.88em;color:#4a5568;margin:6px 0 4px;word-break:keep-all;overflow-wrap:anywhere}
+.v26-answer p{margin:4px 0 0;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere}
+.v26-linkflag{font-size:10px;color:#a8651b;margin-left:4px;white-space:nowrap}

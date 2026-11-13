@@ -1,6 +1,6 @@
 /* v26 · AI 상무관 파견: ①글로벌 통상 브리프 공개 JSON 실시간 조회 ②Codex 사전 심층조사(missions.json)
    ③현지 도착→정보 수집→분석→보고 연출 ④Gemini 무료 등급 종합(프록시) ⑤실패 시 규칙 종합 → v25 시나리오 폴백.
-   기존 v21~v25 기능·저장키는 그대로 두고, 5개 중점국 파견 시 보고서 표시만 덧씌운다. */
+   기존 v21~v25 기능·저장키는 그대로 두고, 21개 파견국 전체에서 보고서 표시를 덧씌운다(사전조사 없으면 '사전조사 없음' AI 종합). */
 (()=>{'use strict';
 const E=id=>document.getElementById(id);
 const h=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -9,10 +9,30 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const toast=x=>{const b=E('toast');if(!b)return;b.textContent=x;b.classList.add('show');setTimeout(()=>b.classList.remove('show'),2700)};
 if(!E('msDispatch')||!E('deepPanel'))return;
 
-const KEYS=['mn','uz','in','sa','id'];
-const META={mn:{ko:'몽골',flag:'🇲🇳',iso:'MN',re:/몽골|Mongolia/i},uz:{ko:'우즈베키스탄',flag:'🇺🇿',iso:'UZ',re:/우즈베키스탄|우즈벡|Uzbekistan/i},
- in:{ko:'인도',flag:'🇮🇳',iso:'IN',re:/인도(?!네시아|태평양|양|차이나|적|주의|산)|\bIndia\b/i},sa:{ko:'사우디아라비아',flag:'🇸🇦',iso:'SA',re:/사우디|Saudi/i},id:{ko:'인도네시아',flag:'🇮🇩',iso:'ID',re:/인도네시아|Indonesia/i}};
-const COUNTRY_TAG={mn:['몽골'],uz:['우즈베키스탄'],in:['인도'],sa:['사우디','사우디아라비아'],id:['인도네시아']};
+// 21개 파견 국가 전체(msCountry 옵션과 동일). tags=브리프 countries 표기, re=본문 매칭
+const META={
+ uz:{ko:'우즈베키스탄',flag:'🇺🇿',iso:'UZ',tags:['우즈베키스탄'],re:/우즈베키스탄|우즈벡|Uzbekistan/i},
+ kz:{ko:'카자흐스탄',flag:'🇰🇿',iso:'KZ',tags:['카자흐스탄'],re:/카자흐|Kazakhstan/i},
+ mn:{ko:'몽골',flag:'🇲🇳',iso:'MN',tags:['몽골'],re:/몽골|Mongolia/i},
+ kg:{ko:'키르기스스탄',flag:'🇰🇬',iso:'KG',tags:['키르기스스탄','키르기스'],re:/키르기스|Kyrgyz/i},
+ tm:{ko:'투르크메니스탄',flag:'🇹🇲',iso:'TM',tags:['투르크메니스탄'],re:/투르크메니스탄|Turkmenistan/i},
+ az:{ko:'아제르바이잔',flag:'🇦🇿',iso:'AZ',tags:['아제르바이잔'],re:/아제르바이잔|Azerbaijan/i},
+ in:{ko:'인도',flag:'🇮🇳',iso:'IN',tags:['인도'],re:/인도(?!네시아|태평양|양|차이나|적|주의|산)|\bIndia\b/i},
+ jp:{ko:'일본',flag:'🇯🇵',iso:'JP',tags:['일본'],re:/일본|\bJapan/i},
+ cn:{ko:'중국',flag:'🇨🇳',iso:'CN',tags:['중국'],re:/중국|\bChina\b/i},
+ vn:{ko:'베트남',flag:'🇻🇳',iso:'VN',tags:['베트남'],re:/베트남|Vietnam|Viet Nam/i},
+ id:{ko:'인도네시아',flag:'🇮🇩',iso:'ID',tags:['인도네시아'],re:/인도네시아|Indonesia/i},
+ ph:{ko:'필리핀',flag:'🇵🇭',iso:'PH',tags:['필리핀'],re:/필리핀|Philippines/i},
+ sa:{ko:'사우디아라비아',flag:'🇸🇦',iso:'SA',tags:['사우디','사우디아라비아'],re:/사우디|Saudi/i},
+ ae:{ko:'UAE',flag:'🇦🇪',iso:'AE',tags:['UAE','아랍에미리트'],re:/UAE|아랍에미리트|Emirates/i},
+ om:{ko:'오만',flag:'🇴🇲',iso:'OM',tags:['오만'],re:/오만(?!원)|\bOman\b/i},
+ eg:{ko:'이집트',flag:'🇪🇬',iso:'EG',tags:['이집트'],re:/이집트|Egypt/i},
+ ke:{ko:'케냐',flag:'🇰🇪',iso:'KE',tags:['케냐'],re:/케냐|Kenya/i},
+ et:{ko:'에티오피아',flag:'🇪🇹',iso:'ET',tags:['에티오피아'],re:/에티오피아|Ethiopia/i},
+ ua:{ko:'우크라이나',flag:'🇺🇦',iso:'UA',tags:['우크라이나'],re:/우크라이나|Ukrain/i},
+ pl:{ko:'폴란드',flag:'🇵🇱',iso:'PL',tags:['폴란드'],re:/폴란드|Poland|Polish/i},
+ tr:{ko:'튀르키예',flag:'🇹🇷',iso:'TR',tags:['튀르키예','터키'],re:/튀르키예|터키|Türkiye|Turkey/i}};
+const KEYS=Object.keys(META);
 const MTITLE={supply:'공급망 긴급 대응',entry:'우리 기업 해외진출 지원',partner:'정부 간 협력창구 발굴'};
 const BRIEF='https://trade-brief-kr.github.io/trade-brief/';
 const API=(()=>{const q=new URLSearchParams(location.search).get('officerApi');const v=String(q||window.TGG_OFFICER_API||'').trim().replace(/\/+$/,'');return safeUrl(v)?v:''})();
@@ -29,7 +49,7 @@ async function loadMissions(){if(MISSIONS)return MISSIONS;
 
 // ---------- ① 글로벌 통상 브리프 공개 JSON ----------
 const briefCache={};
-function matchReport(rep,cc){const out=[],m=META[cc],tags=COUNTRY_TAG[cc];
+function matchReport(rep,cc){const out=[],m=META[cc],tags=m.tags;
  (rep.departments||[]).forEach(dep=>(dep.issues||[]).forEach(is=>{const text=`${is.title||''} ${(is.bullets||[]).map(b=>b.text).join(' ')}`;
   if((is.countries||[]).some(c=>tags.includes(c))||m.re.test(text))out.push({date:rep.date,title:String(is.title||''),category:is.category||'',bullets:(is.bullets||[]).slice(0,3).map(b=>String(b.text||'')),links:(is.bullets||[]).map(b=>({source:b.source,url:safeUrl(b.url)})).filter(x=>x.url).slice(0,2)})}));
  (rep.topIssues||[]).forEach(t=>{if(m.re.test(t.text||''))out.push({date:rep.date,title:String(t.text||''),category:'오늘의 TOP',bullets:[],links:safeUrl(t.url)?[{source:t.source,url:safeUrl(t.url)}]:[]})});
@@ -86,7 +106,7 @@ async function callAI(payload){const ac=new AbortController(),t=setTimeout(()=>a
 
 // ---------- 렌더링 ----------
 function refLinks(refs){return (refs||[]).map(id=>{const s=cur.refs[id];return s?`<a class="v26-ref" href="${h(s.url)}" target="_blank" rel="noopener noreferrer" title="${h(s.title)}">${h(id)}</a>`:''}).join('')}
-function modeNote(){return cur.mode==='ai'?`※ AI 종합(${h(cur.model||'Gemini')}): 아래 근거(B=글로벌 통상 브리프, M=사전 심층조사)만 사용하도록 지시한 생성 결과입니다. 수치·기관 소관·일정은 원문 확인 필요. 우리측 요청은 시연용 가상 설정입니다. 비공개 자료 입력 금지.`
+function modeNote(){return cur.mode==='ai'?`※ AI 종합(${h(cur.model||'Gemini')}): 아래 근거(B=글로벌 통상 브리프, M·I·K=사전 심층조사)만 사용하도록 지시한 생성 결과입니다. 수치·기관 소관·일정은 원문 확인 필요. 우리측 요청은 시연용 가상 설정입니다. 비공개 자료 입력 금지.`
  :`※ 규칙 종합${cur.why?` (AI 미사용: ${h(cur.why)})`:''}: 글로벌 통상 브리프 실시간 조회 결과와 Codex 사전 심층조사(확인일 ${h(cur.card.checked_date)})를 정해진 규칙으로 조합했습니다. 생성형 AI 분석이 아닙니다. 비공개 자료 입력 금지.`}
 function briefBlock(){const b=cur.brief,co=META[cur.cc];
  const link=`<a href="${BRIEF}?tab=country&country=${co.iso}" target="_blank" rel="noopener noreferrer">글로벌 통상 브리프에서 ${h(co.ko)} 보기 ↗</a>`;
@@ -95,22 +115,26 @@ function briefBlock(){const b=cur.brief,co=META[cur.cc];
   :`<p>최근 ${b.scanned}일 브리프에서 ${h(co.ko)} 직접 관련 이슈가 없습니다.</p>`)+`<p class="v21-min">브리프 기준일 ${h(b.date)} · 원본 게시 ${h((b.generatedAt||'').replace('T',' ').slice(0,16))} · ${link}</p>`}
 function sourcesBlock(){return Object.entries(cur.refs).map(([id,s])=>`<div class="v26-src">[${h(id)}] ${h(s.title)} · <a href="${h(s.url)}" target="_blank" rel="noopener noreferrer">${h(s.url)}</a></div>`).join('')}
 function head(sub){const co=META[cur.cc],r=cur.result;return `<div class="deep-kicker">${co.flag} ${h(co.ko)} · ${h(MTITLE[cur.m])} · ${h(sub)}</div><div class="v26-modebar"><span class="v26-badge ${MODE[cur.mode][0]}">${MODE[cur.mode][1]}${cur.mode==='ai'&&cur.model?' · '+h(cur.model):''}</span><span class="v26-status s-${h(r.status.level)}">임무 진척 · ${h(r.status.level)}</span></div><h2>${h(cur.card.scenario?.title||cur.card.title)}</h2>`}
+function answerBlock(){const a=cur.result.request_answer;if(!a||!a.text)return '';const req=(cur.request||'').trim();
+ return `<div class="v26-answer v-${h(a.verdict.replace(/\s/g,''))}"><div class="v26-answer-head"><b>💬 요청에 대한 답변</b><span class="v26-verdict">${h(a.verdict)}</span></div>${req?`<div class="v26-answer-q">Q. ${h(req.slice(0,300))}</div>`:''}<p>${h(a.text)}${refLinks(a.refs)}</p></div>`}
 function briefHTML(){const r=cur.result;return `<div class="v21-report-panel v26-report">${head('국장 보고용 1페이지')}
+ ${cur.card.none?'<div class="v21-box v21-sim">⚠ 사전 심층조사 없음 · 글로벌 통상 브리프와 우리측 요청만으로 AI가 작성한 예비 검토입니다.</div>':''}${answerBlock()}
  <div class="v21-lead"><b>국장 보고 3줄</b><ol class="v26-lines">${r.brief_lines.map(x=>`<li>${h(x)}</li>`).join('')}</ol></div>
  <h3>□ 임무 진척: ${h(r.status.level)}</h3><p>${h(r.status.reason)}</p>
  <h3>□ 새 기회</h3><ul>${r.opportunities.map(x=>`<li>${h(x.text)}${refLinks(x.refs)}</li>`).join('')||'<li>[확인 필요]</li>'}</ul>
  <h3>□ 새 위험</h3><ul>${r.risks.map(x=>`<li>${h(x.text)}${refLinks(x.refs)}</li>`).join('')||'<li>[확인 필요]</li>'}</ul>
  <h3>□ 오늘의 글로벌 통상 브리프 · ${h(META[cur.cc].ko)} 관련</h3>${briefBlock()}
  <h3>□ 근거 자료</h3>${sourcesBlock()}<div class="v21-min" style="margin-top:12px">${modeNote()}</div></div>`}
-function detailHTML(){const c=cur.card,sc=c.scenario||{};let i=0;return `<div class="v21-report-panel v26-report">${head('실무 검토용 상세보고 · 사전 심층조사 확인일 '+c.checked_date)}
+const linkFlag=x=>x&&x.link==='dead'?' <span class="v26-conf chk">링크 오류</span>':x&&x.link==='blocked'?' <span class="v26-linkflag" title="자동 점검에서 접속이 차단·지연된 링크입니다(해외 접속 차단 등). 직접 열어 확인하세요.">⚠ 링크 수동확인</span>':'';
+function detailHTML(){const c=cur.card,sc=c.scenario||{};let i=0;if(c.none)return `<div class="v21-report-panel v26-report">${head('실무 검토용 상세보고')}<div class="v21-box v21-sim">${h(c.summary)}</div>${answerBlock()}<h3>오늘의 글로벌 통상 브리프</h3>${briefBlock()}</div>`;return `<div class="v21-report-panel v26-report">${head('실무 검토용 상세보고 · 사전 심층조사 확인일 '+c.checked_date)}
  <h3>1. 현황 요약 <span class="v21-verified">공개자료</span></h3><p>${h(c.summary)}</p>
- <h3>2. 공개자료로 확인한 사실</h3><div class="v21-box v21-facts"><ul>${(c.key_facts||[]).map(f=>`<li><span class="v26-conf ${f.confidence==='확인'?'ok':'chk'}">${h(f.confidence)}</span>${h(f.fact)} <span class="v26-ref">M${++i}</span> <a href="${h(safeUrl(f.source_url))}" target="_blank" rel="noopener noreferrer">${h(f.source_title)} ↗</a></li>`).join('')}</ul></div>
+ <h3>2. 공개자료로 확인한 사실</h3><div class="v21-box v21-facts"><ul>${(c.key_facts||[]).map(f=>`<li><span class="v26-conf ${f.confidence==='확인'?'ok':'chk'}">${h(f.confidence)}</span>${h(f.fact)} <span class="v26-ref">M${++i}</span> <a href="${h(safeUrl(f.source_url))}" target="_blank" rel="noopener noreferrer">${h(f.source_title)} ↗</a>${linkFlag(f)}</li>`).join('')}</ul></div>
  ${(c.indicators||[]).length?`<h3>3. 주요 지표</h3><table class="v21-tbl"><thead><tr><th>지표</th><th>값</th><th>기준</th><th>출처</th></tr></thead><tbody>${c.indicators.map(x=>`<tr><td>${h(x.name)}</td><td>${h(x.value)}</td><td>${h(x.as_of)}</td><td><a href="${h(safeUrl(x.source_url))}" target="_blank" rel="noopener noreferrer">원문 ↗</a></td></tr>`).join('')}</tbody></table>`:''}
  <h3>4. 상대국 협의대상 기관</h3><table class="v21-tbl"><thead><tr><th>기관</th><th>역할</th><th>공식 참고</th></tr></thead><tbody>${(c.agencies||[]).map(a=>`<tr><td><b>${h(a.name)}</b></td><td>${h(a.role)}</td><td>${safeUrl(a.url)?`<a href="${h(a.url)}" target="_blank" rel="noopener noreferrer">링크 ↗</a>`:'[확인 필요]'}</td></tr>`).join('')}</tbody></table>
  <h3>5. 한국과의 협력 연결고리</h3><ul>${(c.korea_links||[]).map(k=>`<li>${h(k.text)} <a href="${h(safeUrl(k.source_url))}" target="_blank" rel="noopener noreferrer">근거 ↗</a></li>`).join('')}</ul>
  <h3>6. 기회 · 위험 (사전조사)</h3><ul>${(c.opportunities||[]).map(x=>`<li>🟢 ${h(x)}</li>`).join('')}${(c.risks||[]).map(x=>`<li>🔴 ${h(x)}</li>`).join('')}</ul>
  <h3>7. 확인 필요 사항</h3><ul>${(c.uncertain||[]).map(x=>`<li>${h(x)}</li>`).join('')||'<li>없음</li>'}</ul>
- <h3>8. v25 시나리오 판단 기준 <span class="v21-fixtag">가상 설정</span></h3><p><b>판단:</b> ${h(sc.decision)}</p><div class="v21-quote">진전 판단 조건 | ${h(sc.gate)}</div>
+ ${sc.decision?`<h3>8. v25 시나리오 판단 기준 <span class="v21-fixtag">가상 설정</span></h3><p><b>판단:</b> ${h(sc.decision)}</p><div class="v21-quote">진전 판단 조건 | ${h(sc.gate)}</div>`:''}
  <h3>9. 오늘의 글로벌 통상 브리프</h3>${briefBlock()}
  <p class="v21-min">사전 심층조사: Codex CLI 웹검색 생성(확인일 ${h(c.checked_date)}, ${h(missionSrc)}). 외부 사이트는 갱신될 수 있어 원문 재확인 필요.</p></div>`}
 function followHTML(){const r=cur.result,k=cur.cc+'|'+cur.m,ch=checks[k]||{};return `<div class="v21-report-panel v26-report">${head('후속조치 관리카드')}
@@ -124,7 +148,7 @@ function renderV26(){if(!cur)return;const c=E('deepContent');c.innerHTML=view===
  Object.entries({brief:'deepBriefBtn',detail:'deepDetailBtn',follow:'deepFollowBtn'}).forEach(([k,id])=>E(id)?.classList.toggle('selected',view===k));
  c.querySelectorAll('[data-v26-check]').forEach(x=>x.addEventListener('change',()=>{(checks[cur.cc+'|'+cur.m]??={})[x.dataset.v26Check]=x.checked}));
  E('v26LetterCopy')?.addEventListener('click',async()=>{const t=`To: ${cur.result.request_letter.to}\nSubject: ${cur.result.request_letter.subject}\n\n${cur.result.request_letter.body}`;try{await navigator.clipboard.writeText(t);toast('요청서 초안을 복사했습니다.')}catch{toast('복사 권한이 없어 화면에서 직접 선택해 주세요.')}})}
-function previewText(){const r=cur.result,co=META[cur.cc];return `${cur.card.scenario?.title||cur.card.title}\n[${MODE[cur.mode][1]}${cur.mode==='ai'&&cur.model?' · '+cur.model:''}]\n\n□ 국장 보고 3줄\n${r.brief_lines.map((x,i)=>` ${i+1}. ${x}`).join('\n')}\n\n□ 임무 진척: ${r.status.level} — ${r.status.reason}\n\n□ 새 기회\n${r.opportunities.map(x=>' ㅇ '+x.text+(x.refs.length?' ['+x.refs.join(',')+']':'')).join('\n')}\n\n□ 새 위험\n${r.risks.map(x=>' ㅇ '+x.text+(x.refs.length?' ['+x.refs.join(',')+']':'')).join('\n')}\n\n□ 오늘의 글로벌 통상 브리프 (${co.ko})\n${cur.brief?.items?.length?cur.brief.items.map((x,i)=>` [B${i+1}] ${x.date} ${x.title}`).join('\n'):' ㅇ 최근 직접 관련 이슈 없음'}\n\n□ 다음 조치\n${r.next_actions.map(a=>' ㅇ '+(a.when?`(${a.when}) `:'')+a.action).join('\n')}\n\n□ 근거\n${Object.entries(cur.refs).map(([id,s])=>` [${id}] ${s.title} ${s.url}`).join('\n')}\n\n※ 우리측 요청은 시연용 가상 설정. 수치·소관·일정은 원문 확인 필요.`}
+function previewText(){const r=cur.result,co=META[cur.cc];return `${cur.card.scenario?.title||cur.card.title}\n[${MODE[cur.mode][1]}${cur.mode==='ai'&&cur.model?' · '+cur.model:''}]${r.request_answer?.text?`\n\n□ 요청에 대한 답변: ${r.request_answer.verdict}\n ${r.request_answer.text}`:''}\n\n□ 국장 보고 3줄\n${r.brief_lines.map((x,i)=>` ${i+1}. ${x}`).join('\n')}\n\n□ 임무 진척: ${r.status.level} — ${r.status.reason}\n\n□ 새 기회\n${r.opportunities.map(x=>' ㅇ '+x.text+(x.refs.length?' ['+x.refs.join(',')+']':'')).join('\n')}\n\n□ 새 위험\n${r.risks.map(x=>' ㅇ '+x.text+(x.refs.length?' ['+x.refs.join(',')+']':'')).join('\n')}\n\n□ 오늘의 글로벌 통상 브리프 (${co.ko})\n${cur.brief?.items?.length?cur.brief.items.map((x,i)=>` [B${i+1}] ${x.date} ${x.title}`).join('\n'):' ㅇ 최근 직접 관련 이슈 없음'}\n\n□ 다음 조치\n${r.next_actions.map(a=>' ㅇ '+(a.when?`(${a.when}) `:'')+a.action).join('\n')}\n\n□ 근거\n${Object.entries(cur.refs).map(([id,s])=>` [${id}] ${s.title} ${s.url}`).join('\n')}\n\n※ 우리측 요청은 시연용 가상 설정. 수치·소관·일정은 원문 확인 필요.`}
 function applyOutputs(){E('msResultChip').textContent=MODE[cur.mode][1];E('msReportPreview').textContent=previewText();
  E('msStatus').textContent=cur.mode==='ai'?'AI 상무관 보고 완료 · 브리프 실시간 조회 + 사전 심층조사 + AI 종합':'보고 완료 · 브리프 실시간 조회 + 사전 심층조사 규칙 종합';
  if(disc)disc.innerHTML=cur.mode==='ai'?'이 보고서는 <b>글로벌 통상 브리프(실시간 공개 JSON)</b>와 <b>사전 심층조사(공개자료·출처 포함)</b>를 근거로 <b>생성형 AI(Gemini 무료 등급)</b>가 종합한 검토초안입니다. AI 문장은 틀릴 수 있으므로 근거 링크 대조와 담당자 최종 검토가 필요합니다. 비공개 자료 입력 금지.':'이 보고서는 <b>글로벌 통상 브리프(실시간 공개 JSON)</b>와 <b>사전 심층조사(공개자료·출처 포함)</b>를 규칙으로 조합한 <b>시연용 검토초안</b>이며 생성형 AI 분석 결과가 아닙니다. 담당자의 공식자료 대조 및 최종 검토가 필요합니다.';
@@ -138,24 +162,32 @@ async function v26Dispatch(){const cc=E('msCountry').value,m=mission();if(!KEYS.
  await sleep(800);if(id!==run)return;step(0,'done');
  step(1,'active','글로벌 통상 브리프 공개 JSON · 사전 심층조사 수집 중…');
  const [bR,mR]=await Promise.allSettled([loadBrief(cc),loadMissions()]);if(id!==run)return;
- const brief=bR.status==='fulfilled'?bR.value:null,card=(mR.status==='fulfilled'&&mR.value)?mR.value[`${cc}_${m}`]:null;
+ const brief=bR.status==="fulfilled"?bR.value:null;let card=(mR.status==='fulfilled'&&mR.value)?mR.value[`${cc}_${m}`]:null;
  step(1,brief||card?'done':'fail',`브리프 ${brief?`${brief.items.length}건(최근 ${brief.scanned}일)`:'연결 실패'} · 사전조사 ${card?`사실 ${card.key_facts.length}건`:'없음'}`);
- if(!card){step(2,'fail','사전조사 없음 → v25 시나리오 사용');step(3,'done','v25 기본 보고서 표시');setMode('v25');E('deepContent').innerHTML='';E('deepBriefBtn')?.click();return}
+ const noCard=!card;
+ if(noCard&&!API){step(2,'fail','사전조사 없음 → v25 시나리오 사용');step(3,'done','v25 기본 보고서 표시');setMode('v25');E('deepContent').innerHTML='';E('deepBriefBtn')?.click();return}
+ if(noCard)card={none:true,title:`${co.ko} ${MTITLE[m]} (사전조사 없음)`,checked_date:'—',summary:'이 국가·임무 조합은 Codex 사전 심층조사가 아직 없습니다. 글로벌 통상 브리프와 우리측 요청만으로 작성한 예비 검토입니다.',key_facts:[],agencies:[],indicators:[],korea_links:[],opportunities:[],risks:[],questions:[],uncertain:['사전 심층조사 미확보 — 공식자료 확인 필요'],status_hint:{status:'주의',reason:'사전조사 미확보 [확인 필요]'}};
  const refs={};(brief?.items||[]).forEach((x,i)=>{refs['B'+(i+1)]={title:`글로벌 통상 브리프 ${x.date} · ${x.title.slice(0,60)}`,url:x.links[0]?.url||`${BRIEF}#${x.date}`}});
  (card.key_facts||[]).forEach((f,i)=>{refs['M'+(i+1)]={title:f.source_title,url:safeUrl(f.source_url)}});
+ (card.indicators||[]).slice(0,3).forEach((x,i)=>{refs['I'+(i+1)]={title:`지표 · ${x.name} (${x.as_of})`,url:safeUrl(x.source_url)}});
+ (card.korea_links||[]).slice(0,3).forEach((x,i)=>{refs['K'+(i+1)]={title:`한국 협력 · ${String(x.text||'').slice(0,60)}`,url:safeUrl(x.source_url)}});
  let result=null,mode='rule',model='',why='';
  if(API){step(2,'active','Gemini 무료 등급으로 종합 분석 중…');
-  const payload={country:co.ko,countryCode:cc,missionTitle:MTITLE[m],request:(E('msRequest').value||'').slice(0,1200),
+  const sector=E('msSector')?.selectedOptions?.[0]?.textContent||'';
+  const payload={country:co.ko,countryCode:cc,missionTitle:MTITLE[m],sector,request:(E('msRequest').value||'').slice(0,1200),
    brief:brief?{date:brief.date,items:brief.items.map(x=>({date:x.date,title:x.title,bullets:x.bullets}))}:null,
-   research:{checked_date:card.checked_date,summary:card.summary,facts:card.key_facts,opportunities:card.opportunities,risks:card.risks,agencies:card.agencies,questions:card.questions},
+   research:noCard?null:{title:card.title,checked_date:card.checked_date,summary:card.summary,facts:(card.key_facts||[]).slice(0,8).map(f=>({fact:f.fact,source_title:f.source_title,published_or_updated:f.published_or_updated,confidence:f.confidence})),
+    indicators:(card.indicators||[]).slice(0,3).map(x=>({name:x.name,value:x.value,as_of:x.as_of})),korea_links:(card.korea_links||[]).slice(0,3).map(x=>({text:x.text})),
+    opportunities:card.opportunities,risks:card.risks,agencies:(card.agencies||[]).map(a=>({name:a.name,role:a.role})),questions:card.questions,uncertain:card.uncertain},
    scenario:card.scenario||{}};
   try{const j=await callAI(payload);result=j.result;mode='ai';model=j.model||''}catch(e){why=e.message}
   if(id!==run)return}else why='AI 프록시 미설정';
+ if(!result&&noCard){step(2,'fail',`AI 미응답 (${why}) · 사전조사 없음 → v25 시나리오 사용`);step(3,'done','v25 기본 보고서 표시');setMode('v25');E('deepContent').innerHTML='';E('deepBriefBtn')?.click();return}
  if(!result){result=ruleSynth(card,brief,cc);mode='rule'}
  result.brief_lines=result.brief_lines.map(x=>String(x).replace(/^\s*(?:[①②③④]|\d+[.)])\s*/,''));
  step(2,mode==='ai'?'done':'fail',mode==='ai'?`AI 종합 완료 · ${model}`:`규칙 종합 전환 (${why})`);
  step(3,'active','국장 보고·상세·후속조치 작성');await sleep(350);if(id!==run)return;
- cur={cc,m,card,brief,result,mode,model,why,refs};setMode(mode,mode==='ai'?model:'');applyOutputs();
+ cur={cc,m,card,brief,result,mode,model,why,refs,request:(E('msRequest').value||'')};setMode(mode,mode==='ai'?model:'');applyOutputs();
  E('deepPanel').hidden=false;renderV26();step(3,'done','보고 완료 · 아래 보고서 확인');
  toast(mode==='ai'?'AI 상무관 종합보고가 도착했습니다.':'AI 미연결 · 규칙 종합 보고서로 표시합니다.')}
 E('msDispatch').addEventListener('click',()=>setTimeout(v26Dispatch,0));
@@ -166,5 +198,5 @@ document.addEventListener('click',ev=>{if(!cur)return;const t=ev.target.closest?
  ev.stopImmediatePropagation();ev.preventDefault();
  if(t.id==='msEnglish'){const p=E('msReportPreview'),en=t.dataset.v26En!=='1';t.dataset.v26En=en?'1':'0';const L=cur.result.request_letter;p.textContent=en?`To: ${L.to}\nSubject: ${L.subject}\n\n${L.body}`:previewText();t.textContent=en?'🇰🇷 한국어 보고서':'✉ 영문 협조 요청서';return}
  view=t.id==='deepDetailBtn'?'detail':t.id==='deepFollowBtn'?'follow':'brief';renderV26()},true);
-window.tggV26={version:'26',api:()=>API||'(미설정)',state:()=>cur&&{cc:cur.cc,m:cur.m,mode:cur.mode,model:cur.model,brief:cur.brief?.items?.length??null}};
+window.tggV26={version:'26',api:()=>API||'(미설정)',state:()=>cur&&{cc:cur.cc,m:cur.m,mode:cur.mode,model:cur.model,brief:cur.brief?.items?.length??null,card:!cur.card.none,facts:cur.card.key_facts.length,verdict:cur.result.request_answer?.verdict||null}};
 })();

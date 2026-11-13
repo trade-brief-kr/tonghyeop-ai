@@ -86,9 +86,12 @@ with sync_playwright() as p:
     page.click('#deepBriefBtn'); page.wait_for_timeout(200)
     st = dispatch(page, 'in', 'entry')
     ok('PC 상무관 인도·기업진출 (규칙 종합)', st and st['mode'] == 'rule', json.dumps(st, ensure_ascii=False))
-    # 비중점국: 기존 v21 기본 보고서 그대로
-    go(page, 'officer'); page.select_option('#msCountry', 'kz'); page.wait_for_timeout(200); page.click('#msDispatch'); page.wait_for_timeout(900)
-    ok('PC 비중점국(카자흐스탄) 기존 동작 유지', page.evaluate('document.getElementById("v26Stage").hidden') and len(page.inner_text('#msReportPreview')) > 50)
+    # 21개국 확장: 카자흐스탄·키르기스스탄도 사전조사 카드로 v26 보고
+    for cc, m in (('kz', 'supply'), ('kg', 'entry')):
+        go(page, 'officer'); page.select_option('#msCountry', cc); page.wait_for_timeout(200); page.click(f'#officer [data-mission="{m}"]'); page.wait_for_timeout(200); page.click('#msDispatch')
+        page.wait_for_function('window.tggV26 && window.tggV26.state() && document.querySelector("#v26Stage [data-v26-step=\\"3\\"]").classList.contains("done")', timeout=30000)
+        st = page.evaluate('window.tggV26.state()')
+        ok(f'PC 21개국 확장 {cc}_{m} 사전조사 카드 사용(규칙 종합)', st and st['cc'] == cc and st['card'] and st['facts'] >= 4 and st['mode'] == 'rule', json.dumps(st, ensure_ascii=False))
     # 상무관 → 빨간펜
     st = dispatch(page, 'id', 'supply')
     page.click('#deepSendRed'); page.wait_for_timeout(500)
@@ -131,9 +134,18 @@ with sync_playwright() as p:
     page.evaluate("document.getElementById('v26MissionsInline').textContent='null'")
     page.reload(wait_until='load'); page.route('**/data/missions.json', lambda r: r.fulfill(status=404, body='x'))
     page.evaluate("document.getElementById('v26MissionsInline').textContent='null'")
+    page.route('**/api/officer', lambda r: r.fulfill(status=502, content_type='application/json', body='{"error":"upstream_error"}'))
     go(page, 'officer'); page.click('[data-v21-country="sa"]'); page.click('#officer [data-mission="entry"]'); page.click('#msDispatch')
     page.wait_for_function('document.querySelector("#v26Stage [data-v26-step=\\"3\\"]").classList.contains("done")', timeout=20000)
-    ok('PC 폴백: 사전조사 없음 → v25 시나리오', 'v25' in page.inner_text('#v26Mode') and len(page.inner_text('#deepContent')) > 100, page.inner_text('#v26Mode'))
+    ok('PC 폴백: 사전조사 없음 + AI 실패 → v25 시나리오', 'v25' in page.inner_text('#v26Mode') and len(page.inner_text('#deepContent')) > 100, page.inner_text('#v26Mode'))
+    page.unroute('**/api/officer')
+    FAKE = {"ok": True, "model": "mock", "result": {"request_answer": {"verdict": "판단 보류", "text": "사전조사 미확보로 판단 보류(모의 응답).", "refs": []}, "brief_lines": ["가", "나", "다"], "status": {"level": "주의", "reason": "모의"}, "opportunities": [], "risks": [], "next_actions": [{"action": "확인", "when": "이번 주"}], "verify": ["확인"], "request_letter": {"to": "x", "subject": "y", "body": "z"}, "sources_used": []}}
+    page.route('**/api/officer', lambda r: r.fulfill(status=200, content_type='application/json', body=json.dumps(FAKE, ensure_ascii=False)))
+    go(page, 'officer'); page.click('[data-v21-country="sa"]'); page.click('#officer [data-mission="partner"]'); page.click('#msDispatch')
+    page.wait_for_function('window.tggV26.state() && document.querySelector("#v26Stage [data-v26-step=\\"3\\"]").classList.contains("done")', timeout=20000)
+    st = page.evaluate('window.tggV26.state()'); txt = page.inner_text('#deepContent')
+    ok('PC 사전조사 없음 → AI 종합(사전조사 없음 표시·요청 답변)', st and st['mode'] == 'ai' and not st['card'] and '사전 심층조사 없음' in txt and '요청에 대한 답변' in txt, json.dumps(st, ensure_ascii=False))
+    page.unroute('**/api/officer')
     ok('PC 콘솔 에러(폴백 세션, 의도된 네트워크 실패 제외)', not [e for e in errs2 if 'favicon' not in e and 'Failed to load resource' not in e and 'ERR_CONNECTION_REFUSED' not in e], ' | '.join(errs2)[:300])
     ctx.close()
 
